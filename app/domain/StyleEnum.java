@@ -1,0 +1,6 @@
+package domain;
+
+public enum StyleEnum
+{
+    CHINESE, ITALIAN, FRENCH, GREECE, INDIAN, JAPANESE, KOREAN, BAR, STREETFOOD, MORE
+}
