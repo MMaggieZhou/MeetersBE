@@ -25,6 +25,7 @@ libraryDependencies ++= Seq(
   javaCore
 )
 
+libraryDependencies += "ch.hsr" % "geohash" % "1.0.10"
 
 libraryDependencies += "commons-lang" % "commons-lang" % "2.3"
 

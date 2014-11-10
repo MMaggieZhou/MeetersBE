@@ -10,3 +10,5 @@ GET     /assets/*file               controllers.Assets.at(path="/public", file)
 
 # login api hibernate
 POST     /user/login                  controllers.UserServiceREST.login
+
+GET /party/myParty						controllers.PartyServiceREST.getMyParty
