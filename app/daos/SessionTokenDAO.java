@@ -17,7 +17,27 @@ import domain.*;
 public class SessionTokenDAO
 {
 
-    public void createOrUpdateSesstionToken(SessionTokenEntity sessionToken)
+	public void createSesstionToken(SessionTokenEntity sessionToken)
+    {
+        try
+        {
+            JPA.em().persist(sessionToken);
+            Logger.info(String.format("save seesion token(%s) for user(%s)", sessionToken.getValue(),sessionToken.getUserId()));
+        }
+        catch (IllegalArgumentException iae)
+        {
+            Logger.error(iae.getMessage());
+            throw new DatabaseAccessException("Database access error!");
+        }
+        catch (Exception e)
+        {
+            // Handle errors for Class.forName
+            Logger.error(e.getMessage());
+            throw new DatabaseAccessException("Database access error!");
+        }
+
+    }
+	public void createOrUpdateSesstionToken(SessionTokenEntity sessionToken)
     {
         try
         {

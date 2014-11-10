@@ -9,6 +9,9 @@ import java.util.UUID;
 import domain.UserEntity;
 import requests.LoginRequest;
 import requests.LoginResponse;
+import requests.RegisterRequest;
+import requests.RegisterResponse;
+
 import utils.GeoHashUtil;
 import domain.SessionTokenEntity;
 
@@ -118,5 +121,86 @@ public class UserServiceREST extends Controller
         loginResponse.setFirstname(user.getFirstname());
         loginResponse.setAuthToken(sessionToken.getValue());
         return ok(Json.toJson(loginResponse));
+    }
+    
+    @BodyParser.Of(BodyParser.Json.class)
+    @Transactional
+    public static Result register()
+    {
+        JsonNode json = null;
+        RegisterResponse registerResponse = new RegisterResponse();
+        UserEntity user = null;
+        // cast json payload to object
+        //try
+        //{
+            json = request().body().asJson();
+            RegisterRequest registerRequest = Json.fromJson(json, RegisterRequest.class);
+
+            user = new UserEntity();
+            user.setNickname(registerRequest.getNickname());
+            user.setEmail(registerRequest.getEmail());
+            user.setGender(registerRequest.getGender());
+            user.setPhone(registerRequest.getPhone());
+            user.setPassword(registerRequest.getPassword());
+            user.setFirstname(registerRequest.getFirstname());
+            user.setLastname(registerRequest.getLastname());
+
+            Logger.info("Register request@ " + new Date().toGMTString() + "---->" + json.toString());
+
+       // }
+        /*catch (Exception e)
+        {
+            Logger.error("Register request@ " + new Date().toGMTString() + "---->" + e.getMessage());
+            return badRequest((new InvalidJsonException("Register json body is invalid!")).toString());
+        }*/
+
+        // validate the register request payload
+        /*if (StringUtils.isBlank(user.getEmail()) || StringUtils.isBlank(user.getPassword()))
+        {
+            return badRequest(new MissingRequiredFieldException(
+                    "Missing email or password in register request json payload!").toString());
+
+        }*/
+
+        // create the register request in database
+        UserDao ud = null;
+        // validate the login request in database
+        try
+        {
+
+            ud = new UserDao();
+            user = ud.createUser(user);
+
+        }
+        catch (ConflictException e)
+        {
+            return badRequest(e.toString());
+        }
+
+        catch (DatabaseAccessException e)
+        {
+            Logger.error(e.getMessage());
+            return badRequest(e.toString());
+        }
+
+        registerResponse.setEmail(user.getEmail());
+        registerResponse.setNickname(user.getNickname());
+        registerResponse.setUserId(user.getUserId());
+        registerResponse.setGender(user.getGender());
+        registerResponse.setPhone(user.getPhone());
+        registerResponse.setLastname(user.getLastname());
+        registerResponse.setFirstname(user.getFirstname());
+        //EasyMailUtil.sendWelcomeEmail(user.getEmail());
+
+        SessionTokenDAO stDao = new SessionTokenDAO();
+        SessionTokenEntity sessionToken = new SessionTokenEntity();
+        sessionToken.setValue(UUID.randomUUID().toString());
+        sessionToken.setUserId(user.getUserId());
+        Logger.info("Session Auth token for register: " + sessionToken.getValue().toString());
+        stDao.createSesstionToken(sessionToken);
+
+        registerResponse.setAuthToken(sessionToken.getValue());
+        LRUAuthToken.getInstance().put(sessionToken.getValue(), user.getUserId());
+        return created(Json.toJson(registerResponse));
     }
 }
