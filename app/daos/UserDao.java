@@ -137,4 +137,39 @@ public class UserDao
         }
         return user;
     }
+    
+    public boolean updateUserById(int colId, int id, String colValue)
+    {
+        // TODO validate email
+        if (StringUtils.isBlank(colValue))
+        {
+            return false;
+        }
+        String query="update users set ";
+        switch(colId){
+        case 2:
+        	query+="nickname=";
+        	break;
+        case 3:
+        	query+="email=";
+        	break;
+        }
+        query+="'"+colValue+"' where user_id="+id;
+        try
+        {
+            List<?> results = JPA.em()
+                    .createQuery(query)
+                    .getResultList();
+
+            if (results == null || results.size() == 0)
+            {
+                return false;
+            }
+        }
+        catch (Exception e)
+        {
+            throw new DatabaseAccessException("Database access error!");
+        }
+        return true;
+    }
 }

@@ -11,6 +11,8 @@ import requests.LoginRequest;
 import requests.LoginResponse;
 import requests.RegisterRequest;
 import requests.RegisterResponse;
+import requests.ProfileUpdateRequest;
+import requests.ProfileUpdateResponse;
 
 import utils.GeoHashUtil;
 import domain.SessionTokenEntity;
@@ -131,8 +133,6 @@ public class UserServiceREST extends Controller
         RegisterResponse registerResponse = new RegisterResponse();
         UserEntity user = null;
         // cast json payload to object
-        //try
-        //{
             json = request().body().asJson();
             RegisterRequest registerRequest = Json.fromJson(json, RegisterRequest.class);
 
@@ -146,21 +146,6 @@ public class UserServiceREST extends Controller
             user.setLastname(registerRequest.getLastname());
 
             Logger.info("Register request@ " + new Date().toGMTString() + "---->" + json.toString());
-
-       // }
-        /*catch (Exception e)
-        {
-            Logger.error("Register request@ " + new Date().toGMTString() + "---->" + e.getMessage());
-            return badRequest((new InvalidJsonException("Register json body is invalid!")).toString());
-        }*/
-
-        // validate the register request payload
-        /*if (StringUtils.isBlank(user.getEmail()) || StringUtils.isBlank(user.getPassword()))
-        {
-            return badRequest(new MissingRequiredFieldException(
-                    "Missing email or password in register request json payload!").toString());
-
-        }*/
 
         // create the register request in database
         UserDao ud = null;
@@ -202,5 +187,33 @@ public class UserServiceREST extends Controller
         registerResponse.setAuthToken(sessionToken.getValue());
         LRUAuthToken.getInstance().put(sessionToken.getValue(), user.getUserId());
         return created(Json.toJson(registerResponse));
+    }
+    
+    @BodyParser.Of(BodyParser.Json.class)
+    @Transactional
+    public static Result profileUpdate()
+    {
+    	JsonNode json = null;
+        ProfileUpdateResponse profileUpdateResponse = new ProfileUpdateResponse();
+    	json = request().body().asJson();
+        ProfileUpdateRequest profileUpdateRequest = Json.fromJson(json, ProfileUpdateRequest.class);
+        UserDao ud=null;
+        boolean res=false;
+        try{
+        	ud=new UserDao();
+        	res=ud.updateUserById(profileUpdateRequest.getType(), profileUpdateRequest.getUserId(), profileUpdateRequest.getValue());
+        }
+        catch (ConflictException e)
+        {
+            return badRequest(e.toString());
+        }
+
+        catch (DatabaseAccessException e)
+        {
+            Logger.error(e.getMessage());
+            return badRequest(e.toString());
+        }
+        profileUpdateResponse.setFlag(res);
+        return created(Json.toJson(profileUpdateResponse));
     }
 }

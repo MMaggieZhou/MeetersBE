@@ -14,4 +14,7 @@ POST     /user/login                  controllers.UserServiceREST.login
 # register api hibernate
 POST     /user/register                 controllers.UserServiceREST.register
 
+# profile update api hibernate
+POST    /user/profileUpdate             controllers.UserServiceREST.profileUpdate
+
 GET /party/myParty						controllers.PartyServiceREST.getMyParty
