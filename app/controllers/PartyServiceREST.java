@@ -140,6 +140,15 @@ public class PartyServiceREST extends Controller
         return userId;
     }
 
+    /*private static ViewPartyResponse viewByPartyId(BigInteger partyId)
+    {
+    	ViewPartyResponse viewPartyResponse = new ViewPartyResponse();
+    	PartyDAO pd=new PartyDAO();
+    	pd.searchByPartyId(partyId);
+    	return viewByPartyId;
+    	
+    }*/
+    
     private static StartPartyResponse map(PartyEntity partyEntity)
     {
         StartPartyResponse startPartyResponse = new StartPartyResponse();

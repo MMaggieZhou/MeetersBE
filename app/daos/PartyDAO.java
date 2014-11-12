@@ -41,6 +41,21 @@ public class PartyDAO
         }
     }
     
+    /*public PartyEntity searchByPartyId(BigInteger partyId)
+    {
+    	tyr
+    	{
+    		PartyEntity res=JPA.em().createQuery(
+    				"select distincty party from party "
+    				).getResultList();
+    	}
+    	catch (Exception e)
+        {
+            Logger.error(e.getMessage());
+            throw new DatabaseAccessException("Database access error!");
+        }
+    }
+    
     public boolean joinParty(BigInteger userId, BigInteger partyId)
     {
     	boolean res=false;
@@ -66,12 +81,13 @@ public class PartyDAO
     	{
     		res=JPA.em(
     				"delete from party_participant where party_id="+partyId+" and user_id="+userId).createQuery().getResultList();
+    		return res;
     	}
     	catch (Exception e)
         {
             Logger.error(e.getMessage());
             throw new DatabaseAccessException("Database access error!");
         }
-    }
+    }*/
 
 }
