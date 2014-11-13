@@ -18,3 +18,4 @@ POST     /user/register                 controllers.UserServiceREST.register
 POST    /user/profileUpdate             controllers.UserServiceREST.profileUpdate
 
 GET /party/myParty						controllers.PartyServiceREST.getMyParty
+POST /party/nearby						controllers.PartyServiceREST.nearby
