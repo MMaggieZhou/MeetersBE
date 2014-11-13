@@ -1,6 +1,7 @@
 	
 package controllers;
 
+import java.math.BigInteger;
 import java.security.InvalidParameterException;
 import java.sql.SQLException;
 import java.util.Date;
@@ -16,6 +17,10 @@ import requests.ProfileUpdateResponse;
 
 import utils.GeoHashUtil;
 import domain.SessionTokenEntity;
+
+import domain.*;
+import requests.*;
+import exceptions.*;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -33,6 +38,7 @@ import exceptions.DatabaseAccessException;
 import exceptions.ConflictException;
 
 
+import daos.*;
 import daos.SessionTokenDAO;
 import daos.UserDao;
 
@@ -40,6 +46,7 @@ import daos.UserDao;
 
 public class UserServiceREST extends Controller
 {
+   
 
     @BodyParser.Of(BodyParser.Json.class)
     @Transactional

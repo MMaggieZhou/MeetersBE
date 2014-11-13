@@ -7,6 +7,9 @@ import java.util.List;
 import java.util.Date;
 import java.text.SimpleDateFormat;
 
+import ch.hsr.geohash.GeoHash;
+
+
 import domain.PartyEntity;
 import requests.Criteria;
 
@@ -115,6 +118,37 @@ public class PartyDAO
             throw new DatabaseAccessException("Database access error!");
         }
         return rst;
+    }
+    
+    public PartyEntity createParty(PartyEntity pe)
+    {
+        PartyEntity partyEntity = null;
+        try
+        {
+            generateGeoHash(pe, 7);
+            JPA.em().persist(pe);
+
+            PartyParticipant pp = new PartyParticipant();
+            pp.setParty(pe);
+            pp.setParticipant(pe.getHost());
+            JPA.em().persist(pp);
+
+            partyEntity = pe;
+        }
+        catch (Exception e)
+        {
+            Logger.error(e.getMessage());
+            throw new DatabaseAccessException("Database access error!");
+        }
+        return partyEntity;
+    }
+    
+    private void generateGeoHash(PartyEntity partyEntity, int numCharacter)
+    {
+        // exception: latitude and longitude in wrong format or out of bound
+        partyEntity.setGeohash(GeoHash.withCharacterPrecision(partyEntity.getLatitude(), partyEntity.getLongitude(),
+                numCharacter).toBase32());
+
     }
 
 }

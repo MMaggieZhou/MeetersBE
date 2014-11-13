@@ -12,7 +12,6 @@ import java.util.UUID;
 
 import requests.*;
 import domain.*;
-import domain.PartyEntity;
 import requests.*;
 
 import org.apache.commons.lang3.StringUtils;
@@ -30,6 +29,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import common.cache.LRUAuthToken;
 import daos.*;
+import exceptions.ConflictException;
+import exceptions.DatabaseAccessException;
 
 /**
  * @author Maggie
@@ -37,6 +38,90 @@ import daos.*;
  */
 public class PartyServiceREST extends Controller
 {
+    @BodyParser.Of(BodyParser.Json.class)
+    @Transactional
+    public static Result create()
+    {
+        JsonNode json = null;
+        StartPartyResponse startPartyResponse = new StartPartyResponse();
+        StartPartyRequest startPartyRequest = null;
+        PartyEntity partyEntity = null;
+
+        try
+        {
+            json = request().body().asJson();
+            startPartyRequest = Json.fromJson(json, StartPartyRequest.class);
+
+            Logger.info("Start party request@ " + new Date().toGMTString() + "---->" + json.toString());
+
+        }
+        catch (Exception e)
+        {
+            Logger.error("Start party request@ " + new Date().toGMTString() + "---->" + e.getMessage());
+            return badRequest("Party json body is invalid!");
+        }
+
+        String authToken = request().getHeader("AUTHTOKEN");
+        if (startPartyRequest.getUserId() == null)
+        {
+            return unauthorized("Missing user id!");
+        }
+        /*
+         * if (JPA.em().find(UserEntity.class, startPartyRequest.getUserId()) ==
+         * null) { return unauthorized(new
+         * InvalidUserException("User not exist!").toString()); }
+         */
+        if (StringUtils.isBlank(authToken))
+        {
+            return unauthorized("Missing session token!");
+
+        }
+        BigInteger userId = null;
+        try
+        {
+            userId = searchByAuthToken(authToken);
+        }
+        catch (Exception ace)
+        {
+            return unauthorized(ace.toString());
+        }
+        if (userId == null)
+        {
+            return unauthorized("Token not exist!");
+        }
+
+        if (!userId.equals(startPartyRequest.getUserId()))
+        {
+            return unauthorized("Token not match with user id!");
+        }
+
+        partyEntity = map(startPartyRequest);
+
+        PartyDAO pd = null;
+
+        try
+        {
+
+            pd = new PartyDAO();
+            partyEntity = pd.createParty(partyEntity);
+
+        }
+        catch (ConflictException e)
+        {
+            return badRequest(e.toString());
+        }
+
+        catch (DatabaseAccessException e)
+        {
+            Logger.error(e.getMessage());
+            return badRequest(e.toString());
+        }
+
+        startPartyResponse = map(partyEntity);
+        startPartyResponse.setPartyId(partyEntity.getId());
+        return created(Json.toJson(startPartyResponse));
+    }
+
 	@BodyParser.Of(BodyParser.Json.class)
     @Transactional
     public static Result nearby()
@@ -226,7 +311,9 @@ public class PartyServiceREST extends Controller
                     double distance = GeoHashUtil.distance((double) partyEntity.getLatitude(),
                             (double) partyEntity.getLongitude(), ltt, lgt, "M");
                     party.setDistance(new BigDecimal(distance));
-                     return badRequest("longitude or latitude out of range");
+                     
+                } else {
+                    return badRequest("longitude or latitude out of range");
                 }
 
             }
@@ -303,9 +390,9 @@ public class PartyServiceREST extends Controller
     {
         PartyEntity partyEntity = new PartyEntity();
         partyEntity.setHost(JPA.em().find(UserEntity.class, startPartyRequest.getUserId()));
-        partyEntity.setRestaurant(startPartyRequest.getVenues());
+        //partyEntity.setRestaurant(startPartyRequest.getVenues());
         partyEntity.setNumParticipant(startPartyRequest.getNumOfPeople());
-        partyEntity.setPrice(startPartyRequest.getPrice().doubleValue());
+        //partyEntity.setPrice(startPartyRequest.getPrice().doubleValue());
         partyEntity.setOtherInfo(startPartyRequest.getOtherInfo());
         partyEntity.setTheme(startPartyRequest.getTheme());
         partyEntity.setActive(true);
