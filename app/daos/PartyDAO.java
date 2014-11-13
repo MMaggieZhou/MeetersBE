@@ -4,9 +4,13 @@ package daos;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
-
 import java.util.Date;
 import java.text.SimpleDateFormat;
+
+import domain.PartyEntity;
+import requests.Criteria;
+
+import exceptions.DatabaseAccessException;
 
 import domain.*;
 import play.Logger;
@@ -89,5 +93,28 @@ public class PartyDAO
             throw new DatabaseAccessException("Database access error!");
         }
     }*/
+    @SuppressWarnings("unchecked")
+    public ArrayList<PartyEntity> searchNearby(Criteria criteria)
+    {
+        ArrayList<PartyEntity> rst = new ArrayList<PartyEntity>();
+        try
+        {
+            rst = (ArrayList<PartyEntity>) JPA
+                    .em()
+                    .createQuery(
+                            "select party from PartyEntity as party where  (party.geohash like ? or  party.geohash like ? or party.geohash like ? or party.geohash like ? or party.geohash like ? or party.geohash like ? or party.geohash like ? or party.geohash like ? or party.geohash like ?)")
+                    .setParameter(1, criteria.getGeohash()[0] + '%').setParameter(2, criteria.getGeohash()[1] + '%')
+                    .setParameter(3, criteria.getGeohash()[2] + '%').setParameter(4, criteria.getGeohash()[3] + '%')
+                    .setParameter(5, criteria.getGeohash()[4] + '%').setParameter(6, criteria.getGeohash()[5] + '%')
+                    .setParameter(7, criteria.getGeohash()[6] + '%').setParameter(8, criteria.getGeohash()[7] + '%')
+                    .setParameter(9, criteria.getGeohash()[8] + '%').getResultList();
+        }
+        catch (Exception e)
+        {
+            Logger.error(e.getMessage());
+            throw new DatabaseAccessException("Database access error!");
+        }
+        return rst;
+    }
 
 }

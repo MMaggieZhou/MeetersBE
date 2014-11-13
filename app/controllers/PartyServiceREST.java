@@ -12,6 +12,8 @@ import java.util.UUID;
 
 import requests.*;
 import domain.*;
+import domain.PartyEntity;
+import requests.*;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -35,6 +37,117 @@ import daos.*;
  */
 public class PartyServiceREST extends Controller
 {
+	@BodyParser.Of(BodyParser.Json.class)
+    @Transactional
+    public static Result nearby()
+    {
+        // for authtoken validation
+        String authToken = null;
+        BigInteger userId = null;
+
+        // for request body
+        JsonNode json = null;
+        NearbySearchRequest request = null;
+
+        // response
+        SearchPartyResponse startPartyResponse = null;
+        SearchResponse response = new SearchResponse();
+
+        // check authtoken
+        authToken = request().getHeader("AUTHTOKEN");
+        if (StringUtils.isBlank(authToken))
+        {
+            return unauthorized("Missing session token!");
+        }
+        userId = searchByAuthToken(authToken);
+        if (userId == null)
+        {
+            return unauthorized("Token not exist!");
+        }
+
+        // check request body
+        try
+        {
+            json = request().body().asJson();
+            request = Json.fromJson(json, NearbySearchRequest.class);
+
+            Logger.info("Search nearby party request@ " + new Date().toGMTString() + "---->" + json.toString());
+
+        }
+        catch (Exception e)
+        {
+            return badRequest("Request json body is invalid!");
+        }
+
+        if (request.getUserId() == null)
+        {
+            return badRequest("Missing user id!");
+        }
+
+        if (request.getLongitude() == null)
+        {
+            return badRequest("Missing longitude!");
+        }
+        if (request.getLatitude() == null)
+        {
+            return badRequest("Missing latitude!");
+        }
+        if (Math.abs(request.getLongitude().doubleValue()) > 180)
+        {
+            return badRequest("Longitude option out of range!");
+        }
+
+        if (Math.abs(request.getLatitude().doubleValue()) > 90)
+        {
+            return badRequest("Latitude option out of range!");
+        }
+        if (request.getDistanceOption() < 0 || request.getDistanceOption() > 3)
+        {
+            return badRequest("Distance option out of range!");
+        }
+
+        // convert request to criteria
+        Criteria criteria = new Criteria(request);
+        Logger.info("Search nearby criteria ----> " + criteria.toString());
+        ArrayList<PartyEntity> partyCandidates = null;
+        ArrayList<SearchPartyResponse> parties = new ArrayList<SearchPartyResponse>();
+
+        // use criteria to obtani partyEntity list
+        try
+        {
+            partyCandidates = new PartyDAO().searchNearby(criteria);
+        }
+        catch (Exception e)
+        {
+            return internalServerError("Database access error!");
+        }
+        // calculate distance for each partyentity and filter on the list
+        for (PartyEntity party : partyCandidates)
+        {
+        	if (!party.isActive()) {
+        		continue;
+        	}
+            double distance = GeoHashUtil.distance(party.getLatitude(), party.getLongitude(), request.getLatitude(),
+                    request.getLongitude(), "M");
+
+            if (distance >= criteria.getDistance()[0] && distance < criteria.getDistance()[1])
+            {
+                SearchPartyResponse spr = new SearchPartyResponse();
+                spr.setLatitude((double)party.getLatitude());
+                spr.setLongitude((double) party.getLongitude());
+                spr.setDistance(new BigDecimal(distance));
+                parties.add(spr);
+                for (UserEntity user: party.getParticipants()) {
+                	if (user.getUserId().equals(userId)) {
+                		spr.setJoin(true);
+                	}
+                }
+            }
+        }
+        response.setMyParties(parties);
+        Logger.info("search nearby response ----> " + Json.toJson(response));
+        return ok(Json.toJson(response));
+    }
 
     private static SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
     @SuppressWarnings("unused")
