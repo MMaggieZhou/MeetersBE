@@ -197,6 +197,7 @@ public class UserServiceREST extends Controller
         ProfileUpdateResponse profileUpdateResponse = new ProfileUpdateResponse();
     	json = request().body().asJson();
         ProfileUpdateRequest profileUpdateRequest = Json.fromJson(json, ProfileUpdateRequest.class);
+        Logger.info("parse profile request" + (profileUpdateRequest.getUserId() != 0 ? "success" : "fail"));
         UserDao ud=null;
         boolean res=false;
         try{

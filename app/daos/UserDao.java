@@ -1,6 +1,6 @@
-
 package daos;
 
+import java.math.BigInteger;
 import java.util.List;
 
 import javax.persistence.PersistenceException;
@@ -19,8 +19,6 @@ import play.Logger;
 import play.db.jpa.JPA;
 
 import exceptions.ConflictException;
-
-
 
 public class UserDao
 {
@@ -124,7 +122,7 @@ public class UserDao
             List<?> results = JPA.em()
                     .createQuery("select user from UserEntity as user where user.phone" + "= '" + phone + "'")
                     .getResultList();
-
+            
             if (results == null || results.size() == 0)
             {
                 return null;
@@ -137,7 +135,7 @@ public class UserDao
         }
         return user;
     }
-    
+
     public boolean updateUserById(int colId, int id, String colValue)
     {
         // TODO validate email
@@ -145,25 +143,17 @@ public class UserDao
         {
             return false;
         }
-        String query="update users set ";
-        switch(colId){
-        case 2:
-        	query+="nickname=";
-        	break;
-        case 3:
-        	query+="email=";
-        	break;
-        }
-        query+="'"+colValue+"' where user_id="+id;
+        UserEntity user = (UserEntity) JPA.em().find(UserEntity.class, new BigInteger(String.valueOf(id)));
         try
         {
-            List<?> results = JPA.em()
-                    .createQuery(query)
-                    .getResultList();
-
-            if (results == null || results.size() == 0)
+            switch (colId)
             {
-                return false;
+                case 2:
+                    user.setNickname(colValue);
+                    break;
+                case 3:
+                    user.setEmail(colValue);
+                    break;
             }
         }
         catch (Exception e)
