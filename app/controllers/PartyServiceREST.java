@@ -221,6 +221,11 @@ public class PartyServiceREST extends Controller
                 spr.setLatitude((double)party.getLatitude());
                 spr.setLongitude((double) party.getLongitude());
                 spr.setDistance(new BigDecimal(distance));
+                spr.setTheme(party.getTheme());
+                spr.setStartTime(party.getStart().toString());
+                spr.setEndTime(party.getEnd().toString());
+                spr.setLocation(party.getAddressLine1());
+                spr.setDescription(party.getOtherInfo());
                 parties.add(spr);
                 for (UserEntity user: party.getParticipants()) {
                 	if (user.getUserId().equals(userId)) {
@@ -434,5 +439,18 @@ public class PartyServiceREST extends Controller
 
         Date date = sdf.parse(time);
         return new Timestamp(date.getTime());
+    }
+    
+    private static JoinPartyResponse join(JoinPartyRequest joinPartyRequest){
+    	PartyParticipantEntity ppe=new PartyParticipantEntity();
+    	ppe.setPartyId(joinPartyRequest.getPartyId());
+    	ppe.setUserId(joinPartyRequest.getUserId());
+    	ppe.setCreateTime(new Timestamp((System.currentTimeMillis())));
+    	JoinPartyResponse joinPartyResponse=new JoinPartyResponse();
+    	PartyDAO pd=new PartyDAO();
+    	pd.insert(ppe);
+    	joinPartyResponse.setJoin(true);
+    	joinPartyResponse.setPartyId(joinPartyRequest.getPartyId());
+    	return joinPartyResponse;
     }
 }

@@ -150,5 +150,20 @@ public class PartyDAO
                 numCharacter).toBase32());
 
     }
+    
+    public void insert(PartyParticipantEntity ppe)
+    {
+    	
+    	try
+    	{
+    		JPA.em().persist(ppe);
+    	}
+    	catch (Exception e)
+        {
+            Logger.error(e.getMessage());
+            throw new DatabaseAccessException("Database access error!");
+        }
+    	
+    }
 
 }

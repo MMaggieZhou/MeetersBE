@@ -1,12 +1,4 @@
 package requests;
-public class JoinPartyResponse {
-	private boolean flag;
+public class JoinPartyResponse extends SearchPartyResponse{
 	
-	public boolean getFlag(){
-		return flag;
-	}
-	public void setFlag(boolean flag){
-		this.flag=flag;
-	}
-
 }
