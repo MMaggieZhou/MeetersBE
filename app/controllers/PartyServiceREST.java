@@ -475,7 +475,7 @@ public class PartyServiceREST extends Controller
         UserEntity userEntity = null;
 
         // response
-        StartPartyResponse startPartyResponse = null;
+        JoinPartyResponse joinPartyResponse = null;
 
         // check authtoken
         authToken = request().getHeader("AUTHTOKEN");
@@ -540,11 +540,11 @@ public class PartyServiceREST extends Controller
             userEntity = JPA.em().find(UserEntity.class, userId);
             partyEntity = new PartyDAO().joinParty(partyEntity, userEntity);
 
-            startPartyResponse = map(partyEntity);
+            joinPartyResponse = new JoinPartyResponse();
             Logger.info("Join party request successful@ " + new Date().toGMTString() + "---->"
-                    + Json.toJson(startPartyResponse));
+                    + Json.toJson(joinPartyResponse));
 
-            return created(Json.toJson(startPartyResponse));
+            return created(Json.toJson(joinPartyResponse));
         }
         catch (Exception e)
         {
