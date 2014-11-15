@@ -27,6 +27,31 @@ import exceptions.*;
  */
 public class PartyDAO
 {
+    public PartyEntity joinParty(PartyEntity pe, UserEntity ue)
+    {
+        List<?> result = JPA
+                .em()
+                .createQuery(
+                        "select distinct pp from PartyParticipant as pp where pp.pk.party.id =" + pe.getId().toString()
+                                + " and pp.pk.participant.id =" + ue.getUserId().toString()).getResultList();
+        if (result != null && result.size() != 0)
+        {
+            throw new AlreadyExistsException("User already joined this party");
+        }
+        try
+        {
+            PartyParticipant pp = new PartyParticipant();
+            pp.setParty(pe);
+            pp.setParticipant(ue);
+            JPA.em().persist(pp);
+            return pe;
+        }
+        catch (Exception e)
+        {
+            Logger.error(e.getMessage());
+            throw new DatabaseAccessException("Database access error!");
+        }
+    }
     @SuppressWarnings("unchecked")
     public ArrayList<PartyEntity> searchByParticipant(BigInteger userId)
     {

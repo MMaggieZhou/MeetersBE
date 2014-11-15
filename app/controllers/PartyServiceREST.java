@@ -13,6 +13,9 @@ import java.util.UUID;
 import requests.*;
 import domain.*;
 import requests.*;
+import common.cache.*;
+
+
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -27,7 +30,6 @@ import utils.GeoHashUtil;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
-import common.cache.LRUAuthToken;
 import daos.*;
 import exceptions.ConflictException;
 import exceptions.DatabaseAccessException;
@@ -441,7 +443,7 @@ public class PartyServiceREST extends Controller
         return new Timestamp(date.getTime());
     }
     
-    private static JoinPartyResponse join(JoinPartyRequest joinPartyRequest){
+    public static JoinPartyResponse join(JoinPartyRequest joinPartyRequest){
     	PartyParticipantEntity ppe=new PartyParticipantEntity();
     	ppe.setPartyId(joinPartyRequest.getPartyId());
     	ppe.setUserId(joinPartyRequest.getUserId());
@@ -453,4 +455,101 @@ public class PartyServiceREST extends Controller
     	joinPartyResponse.setPartyId(joinPartyRequest.getPartyId());
     	return joinPartyResponse;
     }
+    
+
+    @BodyParser.Of(BodyParser.Json.class)
+    @Transactional
+    public static Result joinParty()
+    {
+        // for authtoken validation
+        String authToken = null;
+        BigInteger userId = null;
+
+        // for request body
+        JsonNode json = null;
+        JoinPartyRequest joinPartyRequest = null;
+
+        // for data model operations
+        BigInteger partyId = null;
+        PartyEntity partyEntity = null;
+        UserEntity userEntity = null;
+
+        // response
+        StartPartyResponse startPartyResponse = null;
+
+        // check authtoken
+        authToken = request().getHeader("AUTHTOKEN");
+        if (StringUtils.isBlank(authToken))
+        {
+            return unauthorized("Missing session token!");
+        }
+        userId = searchByAuthToken(authToken);
+        if (userId == null)
+        {
+            return unauthorized("Token not exist!");
+        }
+
+        // check request body
+        try
+        {
+            json = request().body().asJson();
+            joinPartyRequest = Json.fromJson(json, JoinPartyRequest.class);
+
+            Logger.info("Join party request@ " + new Date().toGMTString() + "---->" + json.toString());
+
+        }
+        catch (Exception e)
+        {
+            return badRequest("Request json body is invalid!");
+        }
+
+        if (joinPartyRequest.getUserId() == null)
+        {
+            return badRequest("Missing user id!");
+        }
+
+        if (joinPartyRequest.getPartyId() == null)
+        {
+            return badRequest("Missing party id!");
+        }
+
+        if (userId.compareTo(joinPartyRequest.getUserId()) != 0)
+        {
+            return forbidden("Token does not match with user id!"
+                    + String.format("Token id is %s, but the userId is %s", userId, joinPartyRequest.getUserId()));
+        }
+
+        // search party by id
+        partyId = joinPartyRequest.getPartyId();
+        try
+        {
+            partyEntity = JPA.em().find(PartyEntity.class, partyId);
+        }
+        catch (Exception e)
+        {
+            return internalServerError(new DatabaseAccessException("Database access error!").toString());
+        }
+        if (partyEntity == null)
+        {
+            return badRequest("Party does not exist!");
+        }
+
+        // join party
+        try
+        {
+            userEntity = JPA.em().find(UserEntity.class, userId);
+            partyEntity = new PartyDAO().joinParty(partyEntity, userEntity);
+
+            startPartyResponse = map(partyEntity);
+            Logger.info("Join party request successful@ " + new Date().toGMTString() + "---->"
+                    + Json.toJson(startPartyResponse));
+
+            return created(Json.toJson(startPartyResponse));
+        }
+        catch (Exception e)
+        {
+            return internalServerError(new DatabaseAccessException("Database access error!").toString());
+        }
+    }
+
 }
